@@ -1,0 +1,5 @@
+- `[/]` Phase 10: Integration & Chat UI
+    - `[ ]` Write `api/main.py` (FastAPI backend exposing `/chat` endpoint)
+    - `[ ]` Write `ui/app.py` (Streamlit frontend Chat UI)
+    - `[ ]` Modify `docker-compose.yml` to serve the API and UI
+    - `[ ]` Test API and UI integration

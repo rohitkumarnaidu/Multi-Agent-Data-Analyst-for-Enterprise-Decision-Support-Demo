@@ -1,0 +1,46 @@
+# === Environment ===
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# === Data (large files — store locally only) ===
+raw/
+clean/
+features/
+data/
+
+# === ML Models (binary artifacts) ===
+models/
+
+# === Jupyter ===
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === IDE ===
+.vscode/
+.idea/
+*.suo
+*.user
+
+# === Kaggle ===
+kaggle.json
+
+# === Logs ===
+logs/
+*.log
+
+# === Temp ===
+tmp/
+temp/

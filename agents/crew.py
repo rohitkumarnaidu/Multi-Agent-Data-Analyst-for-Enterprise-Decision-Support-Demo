@@ -26,7 +26,7 @@ def create_crew(user_question: str) -> Crew:
     # Local Ollama model for Data/Analysis/Visualization heavy lifting
     # Use host.docker.internal if running in Docker, else localhost
     ollama_url = "http://host.docker.internal:11434" if os.environ.get("PYTHONUNBUFFERED") else "http://localhost:11434"
-    local_llm = ChatOllama(model="llama3.1:8b", base_url=ollama_url, temperature=0.1)
+    local_llm = ChatOllama(model="deepseek-r1:8b", base_url=ollama_url, temperature=0.1)
 
     # --- Agent Definitions ---
     

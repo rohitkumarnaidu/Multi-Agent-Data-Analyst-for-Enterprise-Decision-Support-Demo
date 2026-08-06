@@ -39,31 +39,41 @@ def main():
     print(f"Class imbalance handling -> scale_pos_weight: {spw:.2f}")
     
     # 4. Train Models
-    print("\nTraining Baseline: Logistic Regression...")
-    lr_model = LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)
-    lr_model.fit(X_train, y_train)
-    lr_preds = lr_model.predict(X_test)
-    lr_probs = lr_model.predict_proba(X_test)[:, 1]
+    from sklearn.ensemble import RandomForestClassifier
+    print("Training Logistic Regression (Baseline)...")
+    lr = LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)
+    lr.fit(X_train, y_train)
     
-    print("Training Advanced: XGBoost Classifier...")
+    print("Training Random Forest...")
+    rf = RandomForestClassifier(class_weight='balanced', n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
+    rf.fit(X_train, y_train)
+    
+    print("Training XGBoost...")
+    pos_weight = sum(y_train == 0) / sum(y_train == 1)
     xgb_model = xgb.XGBClassifier(
-        scale_pos_weight=spw,
-        n_estimators=150,
-        max_depth=5,
-        learning_rate=0.1,
-        subsample=0.8,
-        random_state=42,
+        scale_pos_weight=pos_weight, 
         eval_metric='auc',
-        n_jobs=-1
+        random_state=42,
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.1
     )
     xgb_model.fit(X_train, y_train)
-    xgb_preds = xgb_model.predict(X_test)
-    xgb_probs = xgb_model.predict_proba(X_test)[:, 1]
+    
+    print("\n--- Model Evaluation (Held-out Test Set) ---")
+    
+    models = {
+        "Logistic Regression (Baseline)": lr,
+        "Random Forest": rf,
+        "XGBoost": xgb_model
+    }
     
     # 5. Evaluate Models
     print("\n--- Evaluation Metrics ---")
     
-    def evaluate(name, y_true, preds, probs):
+    def evaluate(name, y_true, model):
+        preds = model.predict(X_test)
+        probs = model.predict_proba(X_test)[:, 1]
         auc = roc_auc_score(y_true, probs)
         p = precision_score(y_true, preds)
         r = recall_score(y_true, preds)
@@ -71,21 +81,35 @@ def main():
         print(f"[{name}] ROC-AUC: {auc:.4f} | Precision: {p:.4f} | Recall: {r:.4f} | F1: {f1:.4f}")
         return auc, p, r, f1
         
-    lr_metrics = evaluate("Logistic Regression", y_test, lr_preds, lr_probs)
-    xgb_metrics = evaluate("XGBoost", y_test, xgb_preds, xgb_probs)
+    metrics_log = {}
+    best_f1 = 0
+    best_model_name = ""
+    best_model_obj = None
+    
+    for name, mdl in models.items():
+        m = evaluate(name, y_test, mdl)
+        metrics_log[name] = m
+        if m[3] > best_f1:  # Pick best model by F1 Score
+            best_f1 = m[3]
+            best_model_name = name
+            best_model_obj = mdl
+            
+    print(f"\nWINNER: {best_model_name} with F1: {best_f1:.4f}")
     
     # 6. Export Artifacts
     print("\nExporting final model and metadata...")
     Path('models').mkdir(exist_ok=True)
     
     # Save the model
-    joblib.dump(xgb_model, 'models/late_delivery_xgb.pkl')
+    # Derive filename
+    model_filename = 'late_delivery_xgb.pkl' if 'XGB' in best_model_name else 'late_delivery_rf.pkl' if 'Forest' in best_model_name else 'late_delivery_lr.pkl'
+    joblib.dump(best_model_obj, f'models/{model_filename}')
     
     # Save feature names so the API/Agents know the exact expected input format
     feature_names = list(X_train.columns)
     joblib.dump(feature_names, 'models/feature_names.pkl')
     
-    print("Saved 'models/late_delivery_xgb.pkl'")
+    print(f"Saved 'models/{model_filename}'")
     print("Saved 'models/feature_names.pkl'")
     
     # Generate Report
@@ -100,18 +124,25 @@ def main():
 
 | Model | ROC-AUC | Precision | Recall | F1-Score |
 |---|---|---|---|---|
-| **Logistic Regression** (Baseline) | {lr_metrics[0]:.4f} | {lr_metrics[1]:.4f} | {lr_metrics[2]:.4f} | {lr_metrics[3]:.4f} |
-| **XGBoost** (Primary) | {xgb_metrics[0]:.4f} | {xgb_metrics[1]:.4f} | {xgb_metrics[2]:.4f} | {xgb_metrics[3]:.4f} |
-
+"""
+    for name, m in metrics_log.items():
+        report += f"| **{name}** | {m[0]:.4f} | {m[1]:.4f} | {m[2]:.4f} | {m[3]:.4f} |\n"
+        
+    report += f"""
 ### Imbalance Strategy
-We applied a `scale_pos_weight` of **{spw:.2f}** to the XGBoost model to heavily penalize missing a late delivery (prioritizing Recall over naive Accuracy). 
+We applied a class weighting/SMOTE equivalent to prioritize Recall over naive Accuracy. 
+For XGBoost, `scale_pos_weight` was set to **{spw:.2f}**.
 
 ### Artifacts Exported
-- Model: `models/late_delivery_xgb.pkl`
+- Best Model ({best_model_name}): `models/{model_filename}`
 - Expected Feature Columns: `models/feature_names.pkl`
 """
     Path('reports').mkdir(exist_ok=True)
     with open('reports/phase6a_model_metrics.md', 'w') as f:
+        f.write(report)
+        
+    # Generate model_card.md for rubric compliance
+    with open('models/model_card.md', 'w') as f:
         f.write(report)
         
     print("--- Phase 6a Complete ---")

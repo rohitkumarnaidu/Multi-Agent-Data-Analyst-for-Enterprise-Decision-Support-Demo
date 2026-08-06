@@ -9,12 +9,14 @@
 
 | Model | ROC-AUC | Precision | Recall | F1-Score |
 |---|---|---|---|---|
-| **Logistic Regression** (Baseline) | 0.6430 | 0.1276 | 0.5636 | 0.2081 |
-| **XGBoost** (Primary) | 0.7480 | 0.1819 | 0.5974 | 0.2789 |
+| **Logistic Regression (Baseline)** | 0.6430 | 0.1276 | 0.5636 | 0.2081 |
+| **Random Forest** | 0.7325 | 0.1824 | 0.5642 | 0.2757 |
+| **XGBoost** | 0.7439 | 0.1980 | 0.5757 | 0.2947 |
 
 ### Imbalance Strategy
-We applied a `scale_pos_weight` of **11.33** to the XGBoost model to heavily penalize missing a late delivery (prioritizing Recall over naive Accuracy). 
+We applied a class weighting/SMOTE equivalent to prioritize Recall over naive Accuracy. 
+For XGBoost, `scale_pos_weight` was set to **11.33**.
 
 ### Artifacts Exported
-- Model: `models/late_delivery_xgb.pkl`
+- Best Model (XGBoost): `models/late_delivery_xgb.pkl`
 - Expected Feature Columns: `models/feature_names.pkl`

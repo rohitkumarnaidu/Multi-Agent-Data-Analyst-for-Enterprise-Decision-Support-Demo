@@ -68,6 +68,14 @@ Streamlit Chat UI  ──►  FastAPI Backend
 | **Insight & Narrative** | Turns numbers into business-readable answer | Strong (hosted) |
 | **Explainability/Validation** *(bonus)* | Cross-checks narrative vs retrieved data | Strong (hosted) |
 
+### Phase 6b: Agent System
+- **Status:** EXECUTING AUDIT (Waiting on Docker network download)
+- **Decisions:** 
+  - Using Docker to bypass Python 3.14 Windows compiler blocks for `crewai`.
+  - Configured 6 agents mapping to `gpt-4o-mini` (Hosted) and `deepseek-r1:8b` (Local Ollama, based on user hardware availability).
+  - Designed `agents/crew.py` to handle dynamic routing.
+- **Audit:** Automated audit script (`agents/run_audit.py`) is queued to run the 5 questions from `SCOPE.md`, perform the SQL parity test, and test the API Key fallback logic as soon as Docker finishes downloading dependencies.
+
 ### Dataset — Olist Brazilian E-Commerce
 
 | File | Domain |

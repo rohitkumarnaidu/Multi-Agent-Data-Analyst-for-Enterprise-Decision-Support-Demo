@@ -1,0 +1,260 @@
+import json
+from pathlib import Path
+
+notebook = {
+    "cells": [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# Exploratory Data Analysis (EDA) — Olist Late Deliveries\n",
+                "\n",
+                "In this notebook, we explore the `orders_master` table to understand the drivers of **late deliveries**.\n",
+                "This analysis will inform our feature engineering (Phase 5) and business insights report (Phase 8)."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import duckdb\n",
+                "import pandas as pd\n",
+                "import matplotlib.pyplot as plt\n",
+                "import seaborn as sns\n",
+                "\n",
+                "# Plotting aesthetics\n",
+                "sns.set_theme(style=\"whitegrid\")\n",
+                "plt.rcParams['figure.figsize'] = (10, 6)\n",
+                "plt.rcParams['axes.titlesize'] = 16\n",
+                "plt.rcParams['axes.labelsize'] = 12\n",
+                "\n",
+                "# Connect to DuckDB\n",
+                "con = duckdb.connect('../data/olist.duckdb')\n",
+                "\n",
+                "print(\"Connected to DuckDB successfully!\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 1. The Target Variable: Late Deliveries\n",
+                "Let's establish the baseline class imbalance. We only look at delivered orders."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "query_target = \"\"\"\n",
+                "SELECT \n",
+                "    CASE WHEN is_late = 1 THEN 'Late' ELSE 'On-Time' END AS delivery_status,\n",
+                "    COUNT(*) as num_orders\n",
+                "FROM orders_master \n",
+                "WHERE is_delivered = 1\n",
+                "GROUP BY is_late\n",
+                "\"\"\"\n",
+                "df_target = con.execute(query_target).df()\n",
+                "\n",
+                "plt.figure(figsize=(6,6))\n",
+                "plt.pie(df_target['num_orders'], labels=df_target['delivery_status'], autopct='%1.1f%%', \n",
+                "        colors=['#2ecc71', '#e74c3c'], startangle=90, explode=(0, 0.1))\n",
+                "plt.title('Proportion of Late Deliveries')\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 2. Geographic Logistics (State-by-State)\n",
+                "Does shipping to certain states increase the risk of a late delivery?"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "query_state = \"\"\"\n",
+                "SELECT \n",
+                "    customer_state,\n",
+                "    COUNT(*) as total_orders,\n",
+                "    AVG(CAST(is_late AS DOUBLE)) * 100 as late_rate_pct\n",
+                "FROM orders_master\n",
+                "WHERE is_delivered = 1\n",
+                "GROUP BY customer_state\n",
+                "HAVING total_orders > 1000\n",
+                "ORDER BY late_rate_pct DESC\n",
+                "\"\"\"\n",
+                "df_state = con.execute(query_state).df()\n",
+                "\n",
+                "plt.figure(figsize=(12,6))\n",
+                "sns.barplot(data=df_state, x='customer_state', y='late_rate_pct', palette='rocket')\n",
+                "plt.title('Late Delivery Rate by Customer State (Top states by volume)')\n",
+                "plt.ylabel('Late Rate (%)')\n",
+                "plt.xlabel('Customer State')\n",
+                "plt.axhline(df_target[df_target['delivery_status']=='Late']['num_orders'].iloc[0] / df_target['num_orders'].sum() * 100, \n",
+                "            color='gray', linestyle='--', label='Average Late Rate')\n",
+                "plt.legend()\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 3. Freight vs. Price Ratio (Economic Impact)\n",
+                "Are items where freight costs more than the item itself harder to ship on time?"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "query_freight = \"\"\"\n",
+                "SELECT \n",
+                "    CASE WHEN is_late = 1 THEN 'Late' ELSE 'On-Time' END AS delivery_status,\n",
+                "    freight_to_price_ratio\n",
+                "FROM orders_master\n",
+                "WHERE is_delivered = 1 \n",
+                "  AND freight_to_price_ratio < 2.0 -- exclude extreme outliers for plotting\n",
+                "\"\"\"\n",
+                "df_freight = con.execute(query_freight).df()\n",
+                "\n",
+                "plt.figure(figsize=(8,6))\n",
+                "sns.boxplot(data=df_freight, x='delivery_status', y='freight_to_price_ratio', palette=['#2ecc71', '#e74c3c'])\n",
+                "plt.title('Freight-to-Price Ratio: On-Time vs Late Deliveries')\n",
+                "plt.ylabel('Freight / Price Ratio')\n",
+                "plt.xlabel('Delivery Status')\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 4. Customer Satisfaction Impact\n",
+                "What is the exact impact of a late delivery on customer reviews?"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "query_reviews = \"\"\"\n",
+                "SELECT \n",
+                "    CASE WHEN is_late = 1 THEN 'Late' ELSE 'On-Time' END AS delivery_status,\n",
+                "    review_score,\n",
+                "    COUNT(*) as count\n",
+                "FROM orders_master\n",
+                "WHERE is_delivered = 1 AND review_score IS NOT NULL\n",
+                "GROUP BY is_late, review_score\n",
+                "\"\"\"\n",
+                "df_reviews = con.execute(query_reviews).df()\n",
+                "\n",
+                "# Pivot for stacked bar chart\n",
+                "pivot_df = df_reviews.pivot(index='delivery_status', columns='review_score', values='count')\n",
+                "pivot_df = pivot_df.div(pivot_df.sum(axis=1), axis=0) * 100  # Normalize to 100%\n",
+                "\n",
+                "pivot_df.plot(kind='bar', stacked=True, figsize=(10,6), colormap='RdYlGn')\n",
+                "plt.title('Review Score Distribution: On-Time vs Late')\n",
+                "plt.ylabel('Percentage (%)')\n",
+                "plt.xlabel('Delivery Status')\n",
+                "plt.legend(title='Review Score', bbox_to_anchor=(1.05, 1), loc='upper left')\n",
+                "plt.xticks(rotation=0)\n",
+                "plt.tight_layout()\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 5. Seasonality & Volume\n",
+                "Do late deliveries spike during specific months (e.g. holidays)?"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "query_season = \"\"\"\n",
+                "SELECT \n",
+                "    year_ordered,\n",
+                "    month_ordered,\n",
+                "    COUNT(*) as total_orders,\n",
+                "    AVG(CAST(is_late AS DOUBLE)) * 100 as late_rate_pct\n",
+                "FROM orders_master\n",
+                "WHERE is_delivered = 1 AND year_ordered IN (2017, 2018)\n",
+                "GROUP BY year_ordered, month_ordered\n",
+                "ORDER BY year_ordered, month_ordered\n",
+                "\"\"\"\n",
+                "df_season = con.execute(query_season).df()\n",
+                "df_season['year_month'] = df_season['year_ordered'].astype(str) + '-' + df_season['month_ordered'].astype(str).str.zfill(2)\n",
+                "\n",
+                "fig, ax1 = plt.subplots(figsize=(14,6))\n",
+                "\n",
+                "# Primary axis for Volume\n",
+                "color = 'tab:blue'\n",
+                "ax1.set_xlabel('Month')\n",
+                "ax1.set_ylabel('Total Orders', color=color)\n",
+                "ax1.bar(df_season['year_month'], df_season['total_orders'], color=color, alpha=0.6)\n",
+                "ax1.tick_params(axis='y', labelcolor=color)\n",
+                "plt.xticks(rotation=45)\n",
+                "\n",
+                "# Secondary axis for Late Rate\n",
+                "ax2 = ax1.twinx()  \n",
+                "color = 'tab:red'\n",
+                "ax2.set_ylabel('Late Rate (%)', color=color)  \n",
+                "ax2.plot(df_season['year_month'], df_season['late_rate_pct'], color=color, marker='o', linewidth=2)\n",
+                "ax2.tick_params(axis='y', labelcolor=color)\n",
+                "\n",
+                "plt.title('Order Volume vs Late Delivery Rate (2017-2018)')\n",
+                "fig.tight_layout()  \n",
+                "plt.show()\n",
+                "\n",
+                "con.close()"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "codemirror_mode": {
+                "name": "ipython",
+                "version": 3
+            },
+            "file_extension": ".py",
+            "mimetype": "text/x-python",
+            "name": "python",
+            "nbconvert_exporter": "python",
+            "pygments_lexer": "ipython3",
+            "version": "3.14.6"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+out_path = Path('notebooks/02_eda.ipynb')
+out_path.parent.mkdir(exist_ok=True)
+with open(out_path, 'w', encoding='utf-8') as f:
+    json.dump(notebook, f, indent=1)
+
+print(f"Generated {out_path} using pure JSON!")

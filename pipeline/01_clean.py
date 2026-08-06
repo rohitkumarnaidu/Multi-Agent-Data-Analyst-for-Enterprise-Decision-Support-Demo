@@ -200,8 +200,8 @@ def clean_products(con):
                 CAST(p.product_height_cm   AS DOUBLE) AS product_height_cm,
                 CAST(p.product_width_cm    AS DOUBLE) AS product_width_cm,
                 CAST(p.product_photos_qty  AS INT)    AS product_photos_qty,
-                CAST(p.product_name_length AS INT)    AS product_name_length,
-                CAST(p.product_description_length AS INT) AS product_description_length
+                CAST(p.product_name_lenght AS INT)    AS product_name_length,
+                CAST(p.product_description_lenght AS INT) AS product_description_length
             FROM raw_products p
             LEFT JOIN raw_category_translation t
                 ON p.product_category_name = t.product_category_name

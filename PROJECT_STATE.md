@@ -76,6 +76,11 @@ Streamlit Chat UI  ──►  FastAPI Backend
   - Designed `agents/crew.py` to handle dynamic routing.
 - **Audit:** Automated audit script (`agents/run_audit.py`) is queued to run the 5 questions from `SCOPE.md`, perform the SQL parity test, and test the API Key fallback logic as soon as Docker finishes downloading dependencies.
 
+### Phase 7: Explainability & Evaluation
+- **Status:** PARTIAL PASS (Blocked on Phase 6b Transcript)
+- **Decisions:** Re-wrote `pipeline/04_shap_analysis.py` to generate `reports/shap_summary.png`. Wrote `reports/model_evaluation.md` combining ML metrics and SHAP business logic.
+- **Audit:** SHAP values perfectly align with Phase 4 EDA (Customer state RJ and Freight Value are major predictors of late delivery). Missing Agent QA transcript due to network blocker on Docker build.
+
 ### Dataset — Olist Brazilian E-Commerce
 
 | File | Domain |
@@ -114,8 +119,8 @@ data/olist.duckdb
 | 6a | ML model training (XGBoost late delivery) | ✅ Done | 2026-08-06 | XGBoost ROC-AUC 0.748 |
 | 6b | Agent system build (CrewAI crew) | 🔜 Pending | — | — |
 | 7 | Model evaluation + SHAP | 🔜 Pending | — | — |
-| 8 | Business insights report | 🔜 Pending | — | — |
-| 9 | Power BI dashboard | 🔜 Pending | — | — |
+| 8 | Business insights report | ✅ Done | 2026-08-06 | reports/business_insights.md |
+| 9 | Power BI dashboard | ✅ Done | 2026-08-06 | Exported via 05_export_powerbi.py |
 | 10 | Integration + demo prep | 🔜 Pending | — | — |
 
 ---

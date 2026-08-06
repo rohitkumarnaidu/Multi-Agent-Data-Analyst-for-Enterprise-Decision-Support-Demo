@@ -98,12 +98,12 @@ data/olist.duckdb
 | Phase | Description | Status | Date | Notes |
 |---|---|---|---|---|
 | 0 | Project setup, env, dataset download, DuckDB init | ✅ Done | 2026-08-06 | Python 3.14, crewai 0.11.2 |
-| 1 | Dataset release & raw data verification | 🔜 Pending | — | — |
-| 2 | Problem understanding & scope definition | 🔜 Pending | — | — |
-| 3 | Data cleaning | 🔜 Pending | — | — |
-| 4 | Exploratory Data Analysis (EDA) | 🔜 Pending | — | — |
-| 5 | Feature engineering | 🔜 Pending | — | — |
-| 6a | ML model training (XGBoost late delivery) | 🔜 Pending | — | — |
+| 1 | Dataset release & raw data verification | ✅ Done | 2026-08-06 | Raw tables verified via 01_verify_raw.py |
+| 2 | Problem understanding & scope definition | ✅ Done | 2026-08-06 | target=is_late, defined in SCOPE.md |
+| 3 | Data cleaning | ✅ Done | 2026-08-06 | Built orders_master in DuckDB |
+| 4 | Exploratory Data Analysis (EDA) | ✅ Done | 2026-08-06 | Generated 5 charts and findings rubric |
+| 5 | Feature engineering | ✅ Done | 2026-08-06 | Leakage-free features, rolling late rate |
+| 6a | ML model training (XGBoost late delivery) | ✅ Done | 2026-08-06 | XGBoost ROC-AUC 0.748 |
 | 6b | Agent system build (CrewAI crew) | 🔜 Pending | — | — |
 | 7 | Model evaluation + SHAP | 🔜 Pending | — | — |
 | 8 | Business insights report | 🔜 Pending | — | — |
@@ -121,4 +121,4 @@ data/olist.duckdb
 
 ---
 
-*Last updated: 2026-08-06 — Phase 0*
+*Last updated: 2026-08-06 — Phase 6a*

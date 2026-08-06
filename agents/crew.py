@@ -8,10 +8,10 @@ from agents.tools.predict_tool import predict_late_delivery
 
 # 1. Setup the LLM
 # The user specified using Ollama with the phi3:mini model.
-# Ensure Ollama is running (`ollama run phi3:mini`) before executing this.
+# Ensure Ollama is running (`ollama run phi3:mini`) on the host machine before executing this.
 try:
-    # Attempt to use local Ollama
-    default_llm = ChatOllama(model="phi3:mini")
+    # Attempt to use local Ollama via Docker host gateway
+    default_llm = ChatOllama(model="phi3:mini", base_url="http://host.docker.internal:11434")
 except Exception:
     # Fallback to OpenAI if desired (needs OPENAI_API_KEY env var)
     default_llm = ChatOpenAI(temperature=0, model_name="gpt-4o-mini")

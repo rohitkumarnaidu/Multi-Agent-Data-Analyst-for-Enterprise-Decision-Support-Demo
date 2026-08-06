@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+    # Set host.docker.internal to route back to the Windows host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python agents/run_demo.py

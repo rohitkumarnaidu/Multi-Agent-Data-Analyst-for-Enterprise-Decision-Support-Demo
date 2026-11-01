@@ -24,7 +24,7 @@ crewai==0.11.2
 
 # --- LLM APIs ---
 openai>=1.12.0
-anthropic>=0.20.0
+anthropic>=2.3.0
 
 # --- Backend ---
 fastapi>=0.110.0

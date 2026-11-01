@@ -45,7 +45,7 @@ python-dotenv>=1.0.0
 kaggle>=1.6.0
 tqdm>=4.66.0
 loguru>=0.7.0
-rich>=13.7.0
+rich>=15.0.0
 
 # --- Notebooks ---
 ipykernel>=6.29.0

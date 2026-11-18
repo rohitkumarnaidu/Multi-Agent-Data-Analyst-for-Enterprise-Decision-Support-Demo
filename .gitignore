@@ -44,3 +44,6 @@ logs/
 # === Temp ===
 tmp/
 temp/
+
+venv*/
+venv_312/
